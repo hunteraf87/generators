@@ -4,42 +4,48 @@
 
 Класс ThreadsManager запускает трудоемкие задачи с таймаутом выполнения не приводя 
 к блокировке ввода/вывода, что позволяет системе выполнять параллельно и другие задачи.
-При выполнении задач менеджер учитывает приоритеты
+При выполнении задач менеджер учитывает приоритеты. Менеджер может запускать несколько задач с разным приоритетом одновременно.
     
-    'critical' - самый высокий
-    'high' - высокий
-    'low' - низкий
+1. critical' - самый высокий
+2. 'high' - высокий
+3. 'low' - низкий (по умолчанию)
 
 ThreadsManager имеет функции установки времени выполнения задач и времени ожидания до следующиего цикла запуска
-
-    ThreadsManager.setExecutionTime(time: number)
-    ThreadsManager.setWaitingTime(time: number)
+````js
+ThreadsManager.setExecutionTime(time) // время выполнения потока задач в мс
+ThreadsManager.setWaitingTime(time)   // время ожидания для запуска следующего потока задач в мс
+````
 
 Функция count() позволяет получить количество задач в менеджере.
-
-    ThreadsManager.count()
+````js
+ThreadsManager.count()
+````
 
 Функции stop() и break() позволяют завершить задачу или все задачи соответственно.
+````js
+ThreadsManager.stop(ident)  // остановка задачи по идентификатору
+ThreadsManager.break()      // остановка всех задач
+````
 
-    ThreadsManager.stop(ident)
-    ThreadsManager.break()
+Метод forEach обходит Iterable объект любого размера применяя callback для каждого элемента.
+При этом обход выполняется в отдельной задаче в менеджере потоков.
+Метод forEach возвращает Promise.
+В качестве дополнительного необязательного параметра можно передать объект опций
+````js
+{
+    priority: <priority>, // Приоритет задачи
+    id: <id>              // Идентификатор задачи (для останови при необходимости)
+}
+````
 
-Метод forEach обходит Iterable объект любой длины и применяет callback. 
-Принимает в качестве параметров forEach(iterable, callback, options). 
-Options является не обязательный, но при необходимости можно передать объект вида
+Пример задачи (обход большого массива без блокировки ввода/вывода):
+````js
+var countCritical = 0;
+var threadsManager = new ThreadsManager();
 
-    {
-        priority: <priority>, // Приоритет задачи
-        id: <id>                // Идентификатор задачи (для останови при необходимости)
-    }
-
-forEach возвращает Promise по завершении работы. Пример задачи:
-
-    var countCritical = 0;
-    var threadsManager = new ThreadsManager();
-    
-    threadsManager.forEach(
-        new Array(50e7),
-        () => countCritical++,
-        { priority: "critical" }
-    ).then(() => console.log('executed'));
+threadsManager.forEach(
+    new Array(50e7),
+    () => countCritical++,
+    { priority: "critical" }
+).then(() => console.log('executed'));
+````
